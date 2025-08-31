@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from './infra/db/prisma/prisma.module';
 import { UserModule } from './http/user/user.module';
 import { AuthModule } from './http/auth/auth.module';
+import { MessageChannelModule } from './http/message-channel/message-channel.module';
 import { BcryptModule } from './infra/crypto/bcrypt/bcrypt.module';
 import { ConfigModule } from '@nestjs/config';
 import { JwtTokenModule } from './infra/crypto/jwt-token/jwt-token.module';
@@ -21,6 +22,7 @@ import { RabbitMQModule } from './infra/queue/rabbitmq/rabbitmq.module';
     RabbitMQModule,
     AuthModule,
     UserModule,
+    MessageChannelModule,
   ],
   controllers: [],
   providers: [],

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  QueueOnce,
   QueuePublish,
   QueueService,
   QueueSubscribe,
@@ -120,6 +121,41 @@ export class RabbitMQService implements QueueService {
         await this.channel.cancel(consumer.consumerTag);
       },
     };
+  }
+
+  async once<Type>(params: QueueOnce<Type>): Promise<Type | null> {
+    let completed = false;
+    const { promise, resolve } = Promise.withResolvers<Type | null>();
+
+    const subscription = await this.subscribe<Type>({
+      topic: params.topic,
+      dto: params.dto,
+      handler: async ({ data }) => {
+        completed = true;
+        resolve(data);
+        await subscription.unsubscribe();
+      },
+    });
+
+    if (params.afterSubscribe) {
+      try {
+        await params.afterSubscribe();
+      } catch (error) {
+        subscription.unsubscribe();
+        throw error;
+      }
+    }
+
+    if (params.timeout) {
+      setTimeout(async () => {
+        if (completed) return;
+        completed = true;
+        resolve(null);
+        await subscription.unsubscribe();
+      }, params.timeout);
+    }
+
+    return await promise;
   }
 
   // Helpers

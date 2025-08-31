@@ -1,0 +1,2 @@
+export const BOT_REPOSITORY = Symbol('BOT_REPOSITORY');
+export const BOT_INTENT_REPOSITORY = Symbol('BOT_INTENT_REPOSITORY');

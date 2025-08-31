@@ -69,7 +69,7 @@ model MessageChannel {
   name      String               @unique
   contact   String // phone number or another identifier (e.g., dicord user name)
   type      String // for now only "whatsapp"
-  status    MessageChannelStatus @default(DISCONNECTED)
+  status    MessageChannelStatus
   userId    String               @map("userId")
   botId     String
   sessionId String? // session identifier for the channel

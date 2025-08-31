@@ -43,11 +43,13 @@ export class UserService {
       throw new DuplicatedUsernameError('Username already exists');
     }
 
-    const user = new UserEntity({
-      ...data,
-      password: await this.authService.hashPassword(data.password),
-    });
+    const user = await this.userRepository.create(
+      new UserEntity({
+        ...data,
+        password: await this.authService.hashPassword(data.password),
+      }),
+    );
 
-    return await this.userRepository.create(user);
+    return UserDto.parse(user);
   }
 }

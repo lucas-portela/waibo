@@ -59,7 +59,7 @@ export class AuthService {
     }
 
     const user = await this.userService.findById(userId);
-    if (!user) throw new UserNotFoundError();
+    if (!user) throw new UserNotFoundError(userId);
 
     return user;
   }
@@ -75,7 +75,7 @@ export class AuthService {
     }
 
     const user = await this.userService.findById(userId);
-    if (!user) throw new UserNotFoundError();
+    if (!user) throw new UserNotFoundError(userId);
 
     return await this.accessTokenService.generate(user);
   }

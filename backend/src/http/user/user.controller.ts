@@ -3,7 +3,6 @@ import { Public } from '../auth/auth.decorators';
 import type { QueueService } from 'src/application/queue/ports/queue.service';
 import { QUEUE_SERVICE } from 'src/application/queue/tokens';
 import { UserDto } from 'src/application/user/dtos/user.dto';
-import { UserRole } from 'src/domain/user/entities/user.entity';
 
 @Controller('user')
 export class UserController {
@@ -20,17 +19,17 @@ export class UserController {
   @Public()
   @Get('queue')
   async publicEndpoint() {
-    await this.queueService.publish({
-      topic: 'user.created',
-      data: {
-        id: '1',
-        name: 'Lucas',
-        username: 'lucasportela',
-        password: '****',
-        role: UserRole.ADMIN,
-      },
-      dto: UserDto,
-    });
+    // await this.queueService.publish({
+    //   topic: 'user.created',
+    //   data: {
+    //     id: '1',
+    //     name: 'Lucas',
+    //     username: 'lucasportela',
+    //     password: '****',
+    //     role: UserRole.ADMIN,
+    //   },
+    //   dto: UserDto,
+    // });
   }
 
   async onModuleInit() {

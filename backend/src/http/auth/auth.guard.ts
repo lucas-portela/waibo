@@ -40,24 +40,25 @@ export class AuthGuard implements CanActivate {
         throw new MissingAccessTokenError();
       }
       const user = await this.authService.validateToken(token);
-      const isAdmin = this.reflector.getAllAndOverride<boolean>(
+      const isAdminOnly = this.reflector.getAllAndOverride<boolean>(
         IS_ADMIN_ONLY_ENDPOINT_KEY,
         [context.getHandler(), context.getClass()],
       );
-      const isUser = this.reflector.getAllAndOverride<boolean>(
+      const isUserOnly = this.reflector.getAllAndOverride<boolean>(
         IS_USER_ONLY_ENDPOINT_KEY,
         [context.getHandler(), context.getClass()],
       );
 
-      if (isAdmin && user.role !== UserRole.ADMIN) {
+      if (isAdminOnly && user.role !== UserRole.ADMIN) {
         throw new AdminOnlyEndpointError();
       }
 
-      if (isUser && user.role !== UserRole.USER) {
+      if (isUserOnly && user.role !== UserRole.USER) {
         throw new UserOnlyEndpointError();
       }
 
       request['user'] = user;
+      request['isAdmin'] = user.role === UserRole.ADMIN;
     } catch (err) {
       throw new UnauthorizedException(err);
     }

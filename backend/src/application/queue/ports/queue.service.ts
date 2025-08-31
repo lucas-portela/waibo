@@ -22,7 +22,13 @@ export type QueueSubscription = {
   unsubscribe: () => Promise<void>;
 };
 
+export type QueueOnce<Type> = Omit<QueueSubscribe<Type>, 'handler'> & {
+  timeout?: number; // in milliseconds
+  afterSubscribe(): Promise<void>;
+};
+
 export interface QueueService {
   publish<Type>(message: QueuePublish<Type>): Promise<void>;
   subscribe<Type>(params: QueueSubscribe<Type>): Promise<QueueSubscription>;
+  once<Type>(params: QueueOnce<Type>): Promise<Type | null>;
 }

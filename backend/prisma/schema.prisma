@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  name      String
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Bots            Bot[]
+  MessageChannels MessageChannel[]
+}
+
+model Bot {
+  id        String   @id @default(cuid())
+  name      String
+  prompt    String // Knowledge base or initial prompt for the bot
+  userId    String   @map("userId")
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  MessageChannels MessageChannel[]
+  BotIntents      BotIntent[]
+}
+
+model BotIntent {
+  id        String   @id @default(cuid())
+  botId     String
+  tag       String // short identifier for the intent
+  name      String // human-readable name for the intent
+  trigger   String // prompt used to trigger the intent
+  response  String // the cached response the chatbot will give when this intent is triggered
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bot Bot @relation(fields: [botId], references: [id])
+}
+
+enum MessageChannelStatus {
+  CONNECTED
+  ONLINE
+  OFFLINE
+  DISCONNECTED
+}
+
+model MessageChannel {
+  id        String               @id @default(cuid())
+  name      String               @unique
+  contact   String // phone number or another identifier (e.g., dicord user name)
+  type      String // for now only "whatsapp"
+  status    MessageChannelStatus @default(DISCONNECTED)
+  userId    String               @map("userId")
+  botId     String
+  sessionId String? // session identifier for the channel
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  Chats Chat[]
+  bot   Bot    @relation(fields: [botId], references: [id])
+  user  User   @relation(fields: [userId], references: [id])
+}
+
+model Chat {
+  id               String   @id @default(cuid())
+  messageChannelId String
+  name             String // name of the message recipient
+  contact          String // phone number or another identifier (e.g., dicord user name)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  messageChannel MessageChannel @relation(fields: [messageChannelId], references: [id])
+  ChatMessage    ChatMessage[]
+}
+
+enum ChatSender {
+  USER
+  BOT
+  RECIPIENT
+}
+
+model ChatMessage {
+  id        String     @id @default(cuid())
+  chatId    String
+  sender    ChatSender
+  content   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  chat Chat @relation(fields: [chatId], references: [id])
+}

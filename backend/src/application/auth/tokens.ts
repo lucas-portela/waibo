@@ -1,0 +1,2 @@
+export const PASSWORD_HASHER = Symbol('PASSWORD_HASHER');
+export const ACCESS_TOKEN_SERVICE = Symbol('ACCESS_TOKEN_SERVICE');

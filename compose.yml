@@ -1,0 +1,123 @@
+x-backend: &backend-base
+  image: node:20-alpine
+  container_name: backend
+  working_dir: /app
+  volumes:
+    - ./backend:/app
+    - /app/node_modules
+  environment:
+    PORT: "3001"
+    DATABASE_URL: "postgresql://root:root@db:5432/waibo?schema=public"
+  ports:
+    - "3001:3001"
+  depends_on:
+    db:
+      condition: service_healthy
+
+x-web-ui: &web_ui_base
+  image: node:20-alpine
+  container_name: web-ui
+  working_dir: /app
+  volumes:
+    - ./web-ui:/app
+    - /app/node_modules
+  environment:
+    PORT: "3000"
+
+    # Reliable hot reload for Next.js in containers
+    WATCHPACK_POLLING: "true"
+    CHOKIDAR_USEPOLLING: "1"
+    CHOKIDAR_INTERVAL: "300"
+
+  # Install deps, then run Next dev on 0.0.0.0 so host can reach it
+  command: sh -c "npm install && npm run dev -- -p 3000 -H 0.0.0.0"
+  ports:
+    - "3000:3000"
+  stdin_open: true
+  tty: true
+  restart: unless-stopped
+
+services:
+  db:
+    profiles:
+      - dev
+      - prod
+    image: postgres:16
+    container_name: pg
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: waibo
+    volumes:
+      - ./.db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbit:
+    profiles: [dev, prod]
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      # RABBITMQ_DEFAULT_VHOST: "/"   # set to "waibo" if you want a custom vhost
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - ./.rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    
+  backend-dev:
+    <<: *backend-base
+    profiles:
+      - dev
+    environment:
+      # Setup file watching for auto reload
+      CHOKIDAR_USEPOLLING: "1"
+      CHOKIDAR_INTERVAL: "500"   
+      WATCHPACK_POLLING: "true"
+      DATABASE_URL: "postgresql://root:root@db:5432/waibo?schema=public"
+      RABBITMQ_CONNECTION_STRING: "amqp://guest:guest@rabbit:5672"
+    command: sh -c "npm install && npm run start:dev -- --host 0.0.0.0 --port 3001"  
+
+  backend-prod:
+    <<: *backend-base
+    profiles:
+      - prod
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://root:root@db:5432/waibo?schema=public"
+      RABBITMQ_CONNECTION_STRING: "amqp://guest:guest@rabbit:5672"
+    command: sh -c "npm install && npm run start -- --host 0.0.0.0 --port 3001"
+
+  web-ui-dev:
+    <<: *web_ui_base
+    profiles:
+      - dev
+    depends_on:
+      - backend-dev
+    command: sh -c "npm install && npm run dev -- -p 3000 -H 0.0.0.0"
+    environment:
+      NODE_ENV: development
+
+  web-ui-prod:
+    <<: *web_ui_base
+    profiles:
+      - prod
+    depends_on:
+      - backend-prod
+    command: sh -c "npm install && npm run start -- -p 3000 -H 0.0.0.0"
+
+networks:
+  default:
+    name: localnet

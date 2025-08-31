@@ -6,9 +6,7 @@ import type {
   QueueSubscription,
   QueueSubscriptionHandler,
 } from 'src/application/queue/ports/queue.service';
-import type { UserRepository } from 'src/domain/user/repositories/user.repository';
 import { QUEUE_SERVICE } from 'src/application/queue/tokens';
-import { USER_REPOSITORY } from 'src/application/user/tokens';
 import { CreateMessageChannelDto } from '../dtos/create-message-channel.dto';
 import _ from 'lodash';
 import { MessageChannelTypeNotAvailableError } from 'src/core/error/message-channel-=type-not-available.error';
@@ -20,15 +18,18 @@ import {
 import { BOT_REPOSITORY } from 'src/application/bot/tokens';
 import { BotNotFoundError } from 'src/core/error/bot-not-found.error';
 import { UserNotFoundError } from 'src/core/error/user-not-found.error';
-import {
-  MESSAGE_CHANNEL_CREATED,
-  MESSAGE_CHANNEL_PAIRING_CODE as MESSAGE_CHANNEL_PAIRING_DATA,
-  MESSAGE_CHANNEL_REQUEST_PAIRING,
-} from '../topics';
 import { MessageChannelDto } from '../dtos/message-channel.dto';
 import { MessageChannelNotFoundError } from 'src/core/error/message-channel-not-found.error';
-import { PairingDataDto } from '../dtos/pairing-data.dto';
-import { PairingRequestTimedoutError } from 'src/core/error/pairing-request-timedout.error.';
+import {
+  MESSAGE_CHANNEL_INPUT_EVENT,
+  MESSAGE_CHANNEL_OUTPUT_EVENT,
+  MESSAGE_CHANNEL_STATUS_UPDATE,
+} from '../topics';
+import { UpdateMessageChannelDetailsDto } from '../dtos/update-message-channel-details.dto';
+import { UserService } from 'src/application/user/services/user.service';
+import { ChannelPairingService } from './channel-pairing.service';
+import { MessageChannelOutputEventDto } from '../dtos/message-channel-output-event.dto';
+import { MessageChannelInputEventDto } from '../dtos/message-channel-input-event.dto';
 
 export type AvailableChannelType = { id: string; name: string };
 
@@ -38,9 +39,11 @@ export class MessageChannelService {
 
   constructor(
     @Inject(QUEUE_SERVICE) private readonly queueService: QueueService,
-    @Inject(USER_REPOSITORY) private readonly userRepository: UserRepository,
+    private readonly userService: UserService,
+    private readonly pairingService: ChannelPairingService,
     @Inject(MESSAGE_CHANNEL_REPOSITORY)
     private readonly messageChannelRepository: MessageChannelRepository,
+    // TODO: Replace by bot service
     @Inject(BOT_REPOSITORY) private readonly botRepository: BotRepository,
   ) {}
 
@@ -68,78 +71,82 @@ export class MessageChannelService {
 
     const channelDto = MessageChannelDto.parse(channel);
 
-    await this.queueService.publish({
-      topic: MESSAGE_CHANNEL_CREATED(data.type),
-      data: channelDto,
-      dto: MessageChannelDto,
-    });
-
     return channelDto;
   }
 
-  async bindSession(
+  async updateSessionStatus({
+    sessionId,
+    type,
+    status,
+  }: {
+    sessionId: string;
+    type: string;
+    status: MessageChannelStatus;
+  }): Promise<MessageChannelDto> {
+    const channel = await this.messageChannelRepository.findBySessionIdAndType({
+      sessionId,
+      type,
+    });
+    if (!channel) {
+      throw new MessageChannelNotFoundError();
+    }
+
+    const updatedChannel = await this.messageChannelRepository.update(
+      channel.id,
+      {
+        status,
+      },
+    );
+
+    this.queueService.publish({
+      topic: MESSAGE_CHANNEL_STATUS_UPDATE({
+        channelId: updatedChannel.id,
+        channelType: updatedChannel.type,
+      }),
+      data: MessageChannelDto.parse(updatedChannel),
+      dto: MessageChannelDto,
+    });
+
+    return MessageChannelDto.parse(updatedChannel);
+  }
+
+  async updateDetails(
     channelId: string,
-    sessionId: string,
+    data: UpdateMessageChannelDetailsDto,
   ): Promise<MessageChannelDto> {
     const channel = await this.messageChannelRepository.findById(channelId);
     if (!channel) {
       throw new MessageChannelNotFoundError(channelId);
     }
 
+    await this._validateChannelBindings({
+      type: data.type,
+      botId: channel.botId,
+      userId: channel.userId,
+    });
+
+    if (
+      data.type != channel.type &&
+      channel.sessionId &&
+      [
+        MessageChannelStatus.CONNECTED,
+        MessageChannelStatus.ONLINE,
+        MessageChannelStatus.OFFLINE,
+      ].includes(channel.status)
+    ) {
+      await this.pairingService.unpair(channel.id);
+    }
+
     const updatedChannel = await this.messageChannelRepository.update(
-      channelId,
+      channel.id,
       {
-        sessionId,
+        name: data.name,
+        contact: data.contact,
+        type: data.type,
       },
     );
 
     return MessageChannelDto.parse(updatedChannel);
-  }
-
-  async onPairingRequest({
-    channelType,
-    handler,
-  }: {
-    channelType: string;
-    handler: QueueSubscriptionHandler<MessageChannelDto>;
-  }): Promise<QueueSubscription> {
-    return this.queueService.subscribe({
-      topic: MESSAGE_CHANNEL_REQUEST_PAIRING(channelType),
-      dto: MessageChannelDto,
-      handler,
-    });
-  }
-
-  async requestPairing(channelId: string): Promise<PairingDataDto> {
-    const channel = await this.messageChannelRepository.findById(channelId);
-    if (!channel) {
-      throw new MessageChannelNotFoundError(channelId);
-    }
-
-    const channelDto = MessageChannelDto.parse(channel);
-    await this._validateChannelBindings(channel);
-
-    const pairingData = await this.queueService.once<PairingDataDto>({
-      topic: MESSAGE_CHANNEL_PAIRING_DATA({
-        channelType: channel.type,
-        channelId: channel.id,
-      }),
-      timeout: 60000, // 60 seconds
-      dto: PairingDataDto,
-      afterSubscribe: async () => {
-        await this.queueService.publish({
-          topic: MESSAGE_CHANNEL_REQUEST_PAIRING(channel.type),
-          data: channelDto,
-          dto: MessageChannelDto,
-        });
-      },
-    });
-
-    if (!pairingData) {
-      throw new PairingRequestTimedoutError();
-    }
-
-    return pairingData;
   }
 
   async findById(channelId: string): Promise<MessageChannelDto> {
@@ -159,25 +166,75 @@ export class MessageChannelService {
     await this.messageChannelRepository.delete(channelId);
   }
 
+  async outputEvent(data: MessageChannelOutputEventDto) {
+    await this.queueService.publish({
+      topic: MESSAGE_CHANNEL_OUTPUT_EVENT(data.channel.type),
+      data,
+      dto: MessageChannelOutputEventDto,
+    });
+  }
+
+  async onOutputEvent({
+    channelType,
+    handler,
+  }: {
+    channelType: string;
+    handler: QueueSubscriptionHandler<MessageChannelOutputEventDto>;
+  }): Promise<QueueSubscription> {
+    return this.queueService.subscribe({
+      topic: MESSAGE_CHANNEL_OUTPUT_EVENT(channelType),
+      dto: MessageChannelOutputEventDto,
+      handler,
+    });
+  }
+
+  async inputEvent(data: MessageChannelInputEventDto) {
+    await this.queueService.publish({
+      topic: MESSAGE_CHANNEL_INPUT_EVENT(data.channel.type),
+      data,
+      dto: MessageChannelInputEventDto,
+    });
+  }
+
+  async onInputEvent({
+    channelType,
+    handler,
+  }: {
+    channelType: string;
+    handler: QueueSubscriptionHandler<MessageChannelInputEventDto>;
+  }): Promise<QueueSubscription> {
+    return this.queueService.subscribe({
+      topic: MESSAGE_CHANNEL_INPUT_EVENT(channelType),
+      dto: MessageChannelInputEventDto,
+      handler,
+    });
+  }
+
   // Helpers
   private async _validateChannelBindings(
-    data: Pick<MessageChannelEntity, 'type' | 'botId' | 'userId'>,
+    data: Partial<Pick<MessageChannelEntity, 'type' | 'botId' | 'userId'>>,
   ) {
-    const channelTypeIsAvailable = this._availableChannelTypes.some(
-      (channel) => channel.id === data.type,
-    );
-    if (!channelTypeIsAvailable) {
-      throw new MessageChannelTypeNotAvailableError(data.type);
+    if (data.type) {
+      const channelTypeIsAvailable = this._availableChannelTypes.some(
+        (channel) => channel.id === data.type,
+      );
+      if (!channelTypeIsAvailable) {
+        throw new MessageChannelTypeNotAvailableError(data.type);
+      }
     }
 
-    const bot = await this.botRepository.findById(data.botId);
-    if (!bot) {
-      throw new BotNotFoundError(data.botId);
+    if (data.botId) {
+      const bot = await this.botRepository.findById(data.botId);
+      if (!bot) {
+        throw new BotNotFoundError(data.botId);
+      }
     }
 
-    const user = await this.userRepository.findById(data.userId);
-    if (!user) {
-      throw new UserNotFoundError(data.userId);
+    if (data.userId) {
+      const user = await this.userService.findById(data.userId);
+      if (!user) {
+        throw new UserNotFoundError(data.userId);
+      }
     }
   }
 }

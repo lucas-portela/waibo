@@ -31,6 +31,11 @@ export class UserPrismaRepository implements UserRepository {
     return new UserEntity(created);
   }
 
+  async findAll(): Promise<UserEntity[]> {
+    const users = await this.prisma.user.findMany();
+    return users.map((user) => new UserEntity(user));
+  }
+
   async update(id: string, data: UserUpdate): Promise<UserEntity> {
     const updated = await this.prisma.user.update({
       where: { id },

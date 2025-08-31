@@ -4,7 +4,6 @@ import {
   Delete,
   ForbiddenException,
   Get,
-  Inject,
   Param,
   Post,
   Request,
@@ -12,18 +11,18 @@ import {
 import { MessageChannelService } from 'src/application/chat/services/message-channel.service';
 import { CreateMessageChannelRequestDto } from './dtos/create-message-channel-request.dto';
 import { AdminOnly } from '../auth/auth.decorators';
-import { MESSAGE_CHANNEL_SERVICE } from 'src/application/chat/tokens';
 import { AuthenticatedRequestDto } from '../auth/dtos/authenticated-request.dto';
 import { PairingDataResponseDto } from './dtos/pairing-data-response.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { MessageChannelTypeDto as MessageChannelTypeResponseDto } from './dtos/message-channel-type-response.dto';
+import { ChannelPairingService } from 'src/application/chat/services/channel-pairing.service';
 
 @ApiTags('Message Channels')
 @Controller('channel')
 export class MessageChannelController {
   constructor(
-    @Inject(MESSAGE_CHANNEL_SERVICE)
     private readonly messageChannelService: MessageChannelService,
+    private readonly channelPairingService: ChannelPairingService,
   ) {}
 
   @Get('available')
@@ -73,7 +72,7 @@ export class MessageChannelController {
   async requestPairing(
     @Param('channelId') channelId: string,
   ): Promise<PairingDataResponseDto> {
-    return this.messageChannelService.requestPairing(channelId);
+    return this.channelPairingService.requestPairing(channelId);
   }
 
   @Delete(':channelId')

@@ -7,6 +7,7 @@ export enum PairingType {
 
 export const PairingDataDto = z.object({
   channelId: z.string().nonempty().nonoptional(),
+  channelType: z.string().nonempty().nonoptional(),
   type: z.enum(PairingType),
   data: z.string().nonempty().nonoptional(),
 });

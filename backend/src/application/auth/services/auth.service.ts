@@ -15,7 +15,8 @@ import { UserDto } from 'src/application/user/dtos/user.dto';
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(forwardRef(() => UserService)) private userService: UserService,
+    @Inject(forwardRef(() => UserService))
+    private userService: UserService,
     @Inject(PASSWORD_HASHER) private passwordHasher: PasswordHasher,
     @Inject(ACCESS_TOKEN_SERVICE)
     private accessTokenService: AccessTokenService,

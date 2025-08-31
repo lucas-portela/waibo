@@ -20,6 +20,16 @@ export class MessageChannelPrismaRepository
     return messageChannel ? new MessageChannelEntity(messageChannel) : null;
   }
 
+  async findBySessionIdAndType(params: {
+    sessionId: string;
+    type: string;
+  }): Promise<MessageChannelEntity | null> {
+    const messageChannel = await this.prisma.messageChannel.findFirst({
+      where: { sessionId: params.sessionId, type: params.type },
+    });
+    return messageChannel ? new MessageChannelEntity(messageChannel) : null;
+  }
+
   async findByUserId(userId: string): Promise<MessageChannelEntity[]> {
     const messageChannels = await this.prisma.messageChannel.findMany({
       where: { userId },

@@ -1,0 +1,109 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  Post,
+  Put,
+  Request,
+} from '@nestjs/common';
+import { BotService } from 'src/application/bot/services/bot.service';
+import { CreateBotRequestDto } from './dtos/create-bot-request.dto';
+import { UpdateBotRequestDto } from './dtos/update-bot-request.dto';
+import { AdminOnly } from '../auth/auth.decorators';
+import { AuthenticatedRequestDto } from '../auth/dtos/authenticated-request.dto';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+
+@ApiTags('Bots')
+@Controller('bot')
+export class BotController {
+  constructor(private readonly botService: BotService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new bot' })
+  async create(
+    @Body() createBotDto: CreateBotRequestDto,
+    @Request() req: AuthenticatedRequestDto,
+  ) {
+    const userId = req.user.id;
+    return this.botService.create({
+      ...createBotDto,
+      userId,
+    });
+  }
+
+  @Get('user/me')
+  @ApiOperation({
+    summary: 'Get all bots for the authenticated user',
+  })
+  async findMyBots(@Request() req: AuthenticatedRequestDto) {
+    const userId = req.user.id;
+    return this.botService.findByUserId(userId);
+  }
+
+  @Get('user/:userId')
+  @AdminOnly()
+  @ApiOperation({
+    summary: 'Get all bots for a specific user (admin only)',
+  })
+  async findByUserId(@Param('userId') userId: string) {
+    return this.botService.findByUserId(userId);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a specific bot by ID' })
+  async findById(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequestDto,
+  ) {
+    const bot = await this.botService.findById(id);
+
+    // Check if user is admin or owner of the bot
+    if (!req.isAdmin && bot.userId !== req.user.id) {
+      throw new ForbiddenException(
+        'You do not have permission to access this bot',
+      );
+    }
+
+    return bot;
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update a specific bot' })
+  async update(
+    @Param('id') id: string,
+    @Body() updateBotDto: UpdateBotRequestDto,
+    @Request() req: AuthenticatedRequestDto,
+  ) {
+    const bot = await this.botService.findById(id);
+
+    // Check if user is admin or owner of the bot
+    if (!req.isAdmin && bot.userId !== req.user.id) {
+      throw new ForbiddenException(
+        'You do not have permission to update this bot',
+      );
+    }
+
+    return this.botService.update(id, updateBotDto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a specific bot' })
+  async delete(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequestDto,
+  ) {
+    const bot = await this.botService.findById(id);
+
+    // Check if user is admin or owner of the bot
+    if (!req.isAdmin && bot.userId !== req.user.id) {
+      throw new ForbiddenException(
+        'You do not have permission to delete this bot',
+      );
+    }
+
+    await this.botService.delete(id);
+  }
+}

@@ -50,6 +50,9 @@ import { BotIntentPrismaRepository } from './repositories/bot-intent-prisma-repo
     PrismaService,
     USER_REPOSITORY,
     MESSAGE_CHANNEL_REPOSITORY,
+    CHAT_MESSAGE_REPOSITORY,
+    CHAT_REPOSITORY,
+    BOT_INTENT_REPOSITORY,
     BOT_REPOSITORY,
   ],
 })

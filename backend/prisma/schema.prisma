@@ -82,12 +82,13 @@ model MessageChannel {
 }
 
 model Chat {
-  id               String   @id @default(cuid())
-  messageChannelId String
-  name             String // name of the message recipient
-  contact          String // phone number or another identifier (e.g., dicord user name)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  messageChannelId   String
+  name               String // name of the message recipient
+  contact            String // phone number or another identifier (e.g., dicord user name)
+  internalIdentifier String // unique identifier for the chat (e.g., WhatsApp chat ID)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   messageChannel MessageChannel @relation(fields: [messageChannelId], references: [id])
   ChatMessage    ChatMessage[]

@@ -13,8 +13,10 @@ import { MessageChannelService } from 'src/application/chat/services/message-cha
 import { UpdateChatRequestDto } from './dtos/update-chat-request.dto';
 import { SendMessageRequestDto } from './dtos/send-message-request.dto';
 import { ChatResponseDto } from './dtos/chat-response.dto';
+import { ChatMessageResponseDto } from './dtos/chat-message-response.dto';
 import { AuthenticatedRequestDto } from '../auth/dtos/authenticated-request.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { ChatSender } from 'src/domain/chat/entities/chat-message.entity';
 import { MessageChannelNotFoundError } from 'src/core/error/message-channel-not-found.error';
 import { ChatNotFoundError } from 'src/core/error/chat-not-found.error';
@@ -42,7 +44,27 @@ export class ChatController {
   ) {
     await this._checkChannelACL({ channelId, req });
 
-    return this.chatService.findChatsByMessageChannelId(channelId);
+    const chats = await this.chatService.findChatsByMessageChannelId(channelId);
+    return chats.map((chat) => plainToInstance(ChatResponseDto, chat));
+  }
+
+  @Get(':chatId/messages')
+  @ApiOperation({ summary: 'List all messages in a chat' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of messages retrieved successfully',
+    type: ChatMessageResponseDto,
+    isArray: true,
+  })
+  async listMessagesByChatId(
+    @Param('chatId') chatId: string,
+    @Request() req: AuthenticatedRequestDto,
+  ) {
+    await this._checkChatACL({ chatId, req });
+    const messages = await this.chatService.findMessagesByChatId(chatId);
+    return messages.map((message) =>
+      plainToInstance(ChatMessageResponseDto, message),
+    );
   }
 
   @Put(':chatId')
@@ -58,7 +80,8 @@ export class ChatController {
     @Request() req: AuthenticatedRequestDto,
   ) {
     await this._checkChatACL({ chatId, req });
-    return this.chatService.updateChat(chatId, updateChatDto);
+    const chat = await this.chatService.updateChat(chatId, updateChatDto);
+    return plainToInstance(ChatResponseDto, chat);
   }
 
   @Delete(':chatId')

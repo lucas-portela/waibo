@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import makeWASocket, {
   AuthenticationCreds,
-  Browsers,
   DisconnectReason,
   fetchLatestBaileysVersion,
   useMultiFileAuthState,
@@ -17,6 +16,7 @@ import * as qrcode from 'qrcode-terminal';
 import fs from 'fs';
 import { ChatService } from 'src/application/chat/services/chat.service';
 import { ChatSender } from 'src/domain/chat/entities/chat-message.entity';
+import pino from 'pino';
 
 const CHANNEL_TYPE = 'whatsapp';
 const CHANNEL_NAME = 'WhatsApp';
@@ -182,8 +182,8 @@ export class WhatsappBaileysService {
     const sock = makeWASocket({
       auth: state,
       version: this.waVersion,
-      browser: Browsers.appropriate('Chrome'),
       getMessage: async () => undefined,
+      logger: pino({ level: 'error' }),
     });
 
     const connection: BaileysConnection = { sock, channel };
@@ -211,8 +211,13 @@ export class WhatsappBaileysService {
       try {
         for (const message of messages) {
           // TODO: ignore messages from myself
-          // if (message.key.fromMe) continue;
-          if (message.key.remoteJid === 'status@broadcast') continue;
+          if (
+            // message.key.fromMe ||
+            this._isBroadcastMessage(message) ||
+            this._isGroupMessage(message)
+          )
+            continue;
+
           const content = this._getMessageText(message);
           const chatInternalIdentifier = this._buildChatInternalIdentifier(
             channel,
@@ -233,7 +238,6 @@ export class WhatsappBaileysService {
           await this.chatService.createMessage({
             chatInternalIdentifier,
             sender: ChatSender.RECIPIENT,
-            sessionId: channel.sessionId!,
             content,
           });
         }
@@ -327,5 +331,13 @@ export class WhatsappBaileysService {
     return (message.key.remoteJid || '')
       .replace('@s.whatsapp.net', '')
       .replace('@g.us', '');
+  }
+
+  private _isGroupMessage(message: WAMessage) {
+    return (message.key.remoteJid || '').endsWith('@g.us');
+  }
+
+  private _isBroadcastMessage(message: WAMessage) {
+    return (message.key.remoteJid || '').endsWith('@broadcast');
   }
 }

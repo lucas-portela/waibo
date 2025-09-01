@@ -19,13 +19,4 @@ export class SendMessageRequestDto {
   @IsString()
   @MinLength(1)
   content: string;
-
-  @ApiProperty({
-    description: 'Session ID for the message',
-    example: 'session_123456',
-    minLength: 1,
-  })
-  @IsString()
-  @MinLength(1)
-  sessionId: string;
 }

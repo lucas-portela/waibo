@@ -94,6 +94,11 @@ export class ChatService {
     return chats.map((chat) => ChatDto.parse(chat));
   }
 
+  async findMessagesByChatId(chatId: string) {
+    const messages = await this.chatMessageRepository.findByChatId(chatId);
+    return messages.map((message) => ChatMessageDto.parse(message));
+  }
+
   async createMessage(data: CreateChatMessageDto) {
     const chat = await this.findChatByInternalIdentifier(
       data.chatInternalIdentifier,

@@ -45,6 +45,11 @@ export class MessageChannelController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new message channel' })
+  @ApiResponse({
+    status: 201,
+    description: 'Message channel created successfully',
+    type: MessageChannelResponseDto,
+  })
   async create(
     @Body() createMessageChannelDto: CreateMessageChannelRequestDto,
     @Request() req: AuthenticatedRequestDto,
@@ -60,6 +65,12 @@ export class MessageChannelController {
   @Get('user/me')
   @ApiOperation({
     summary: 'Get all message channels for the authenticated user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User message channels retrieved successfully',
+    type: MessageChannelResponseDto,
+    isArray: true,
   })
   async findMyChannels(@Request() req: AuthenticatedRequestDto) {
     const userId = req.user.id;
@@ -85,6 +96,11 @@ export class MessageChannelController {
   @ApiOperation({
     summary: 'Update minor details of a specific message channel',
   })
+  @ApiResponse({
+    status: 200,
+    description: 'Message channel updated successfully',
+    type: MessageChannelResponseDto,
+  })
   async update(
     @Param('channelId') channelId: string,
     @Body() updateMessageChannelDto: Partial<CreateMessageChannelRequestDto>,
@@ -105,11 +121,18 @@ export class MessageChannelController {
     @Request() req: AuthenticatedRequestDto,
   ): Promise<PairingDataResponseDto> {
     await this._checkChannelACL(req, channelId);
-    return this.channelPairingService.requestPairing(channelId);
+    const pairingData =
+      await this.channelPairingService.requestPairing(channelId);
+    return plainToInstance(PairingDataResponseDto, pairingData);
   }
 
   @Post(':channelId/disconnect')
   @ApiOperation({ summary: 'Disconnect a specific message channel' })
+  @ApiResponse({
+    status: 200,
+    description: 'Channel disconnected successfully',
+    type: MessageChannelResponseDto,
+  })
   async disconnect(
     @Param('channelId') channelId: string,
     @Request() req: AuthenticatedRequestDto,

@@ -15,6 +15,7 @@ import { BotResponseDto } from './dtos/bot-response.dto';
 import { AdminOnly } from '../auth/auth.decorators';
 import { AuthenticatedRequestDto } from '../auth/dtos/authenticated-request.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { UnauthorizedError } from 'src/core/error/unauthorized.error';
 
 @ApiTags('Bots')
@@ -34,10 +35,11 @@ export class BotController {
     @Request() req: AuthenticatedRequestDto,
   ) {
     const userId = req.user.id;
-    return this.botService.create({
+    const bot = await this.botService.create({
       ...createBotDto,
       userId,
     });
+    return plainToInstance(BotResponseDto, bot);
   }
 
   @Get('user/me')
@@ -52,7 +54,8 @@ export class BotController {
   })
   async findMyBots(@Request() req: AuthenticatedRequestDto) {
     const userId = req.user.id;
-    return this.botService.findByUserId(userId);
+    const bots = await this.botService.findByUserId(userId);
+    return bots.map((bot) => plainToInstance(BotResponseDto, bot));
   }
 
   @Get('user/:userId')
@@ -67,7 +70,8 @@ export class BotController {
     isArray: true,
   })
   async findByUserId(@Param('userId') userId: string) {
-    return this.botService.findByUserId(userId);
+    const bots = await this.botService.findByUserId(userId);
+    return bots.map((bot) => plainToInstance(BotResponseDto, bot));
   }
 
   @Get(':id')
@@ -90,7 +94,7 @@ export class BotController {
       );
     }
 
-    return bot;
+    return plainToInstance(BotResponseDto, bot);
   }
 
   @Put(':id')
@@ -114,7 +118,8 @@ export class BotController {
       );
     }
 
-    return this.botService.update(id, updateBotDto);
+    const updatedBot = await this.botService.update(id, updateBotDto);
+    return plainToInstance(BotResponseDto, updatedBot);
   }
 
   @Delete(':id')

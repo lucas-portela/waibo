@@ -16,6 +16,7 @@ import { UpdateUserRequestDto } from './dtos/update-user-request.dto';
 import { UserResponseDto } from './dtos/user-response.dto';
 import { UserService } from 'src/application/user/services/user.service';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import type { QueueService } from 'src/application/queue/ports/queue.service';
 import { QUEUE_SERVICE } from 'src/application/queue/tokens';
 
@@ -37,7 +38,8 @@ export class UserController {
     type: UserResponseDto,
   })
   async create(@Body() createUserDto: CreateUserRequestDto) {
-    return this.userService.createUser(createUserDto);
+    const user = await this.userService.createUser(createUserDto);
+    return plainToInstance(UserResponseDto, user);
   }
 
   @Get()
@@ -50,7 +52,8 @@ export class UserController {
     isArray: true,
   })
   async findAll() {
-    return this.userService.findAll();
+    const users = await this.userService.findAll();
+    return users.map((user) => plainToInstance(UserResponseDto, user));
   }
 
   @Get('me')
@@ -61,7 +64,8 @@ export class UserController {
     type: UserResponseDto,
   })
   async getProfile(@Request() req: AuthenticatedRequestDto) {
-    return this.userService.findById(req.user.id);
+    const user = await this.userService.findById(req.user.id);
+    return plainToInstance(UserResponseDto, user);
   }
 
   @Put('me')
@@ -75,7 +79,8 @@ export class UserController {
     @Body() updateUserDto: UpdateUserRequestDto,
     @Request() req: AuthenticatedRequestDto,
   ) {
-    return this.userService.update(req.user.id, updateUserDto);
+    const user = await this.userService.update(req.user.id, updateUserDto);
+    return plainToInstance(UserResponseDto, user);
   }
 
   @Delete('me')

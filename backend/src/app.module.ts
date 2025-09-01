@@ -17,12 +17,14 @@ import { BotHttpModule } from './http/bot/bot-http.module';
 import { ChatHttpModule } from './http/chat/chat-http.module';
 import { WhatsappBaileysModule } from './infra/message-channel/whatsapp-baileys/whatsapp-baileys.module';
 import { rabbitMqConfig } from './infra/queue/rabbitmq/rabbitmq.config';
+import { openAiConfig } from './infra/language-model/openai/openai.config';
+import { OpenAiModule } from './infra/language-model/openai/openai.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, jwtTokenConfig, rabbitMqConfig],
+      load: [appConfig, jwtTokenConfig, rabbitMqConfig, openAiConfig],
     }),
     PrismaModule,
     BcryptModule,
@@ -38,6 +40,7 @@ import { rabbitMqConfig } from './infra/queue/rabbitmq/rabbitmq.config';
     BotHttpModule,
     ChatHttpModule,
     WhatsappBaileysModule,
+    OpenAiModule,
   ],
   controllers: [],
   providers: [],

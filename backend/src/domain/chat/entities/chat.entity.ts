@@ -9,6 +9,7 @@ export type ChatEntitySnapshot = EntitySnapshot<{
   name: string;
   contact: string;
   internalIdentifier: string;
+  botMemory?: string | null;
 }>;
 
 export class ChatEntity extends BaseEntity<ChatEntitySnapshot> {
@@ -16,6 +17,7 @@ export class ChatEntity extends BaseEntity<ChatEntitySnapshot> {
   declare name: string;
   declare contact: string;
   declare internalIdentifier: string;
+  declare botMemory?: string;
 
   protected _snapshot(): Omit<ChatEntitySnapshot, keyof BaseSnapshot> {
     return {
@@ -23,6 +25,7 @@ export class ChatEntity extends BaseEntity<ChatEntitySnapshot> {
       name: this.name,
       contact: this.contact,
       internalIdentifier: this.internalIdentifier,
+      botMemory: this.botMemory,
     };
   }
 
@@ -33,5 +36,6 @@ export class ChatEntity extends BaseEntity<ChatEntitySnapshot> {
     if (data.contact) this.contact = data.contact.trim();
     if (data.internalIdentifier)
       this.internalIdentifier = data.internalIdentifier.trim();
+    if (data.botMemory !== undefined) this.botMemory = data.botMemory?.trim();
   }
 }

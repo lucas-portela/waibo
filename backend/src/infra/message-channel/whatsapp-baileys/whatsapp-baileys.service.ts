@@ -159,6 +159,7 @@ export class WhatsappBaileysService {
     await connection.sock.ws.close();
     connection.sock.ev.removeAllListeners('creds.update');
     connection.sock.ev.removeAllListeners('connection.update');
+    connection.sock.ev.removeAllListeners('messages.upsert');
   }
 
   private async _reconnect(connection: BaileysConnection) {
@@ -210,7 +211,7 @@ export class WhatsappBaileysService {
     sock.ev.on('messages.upsert', async ({ messages }) => {
       try {
         for (const message of messages) {
-          // TODO: ignore messages from myself
+          // TODO: ignore messages from myself and remove $ filter
           if (
             // message.key.fromMe ||
             this._isBroadcastMessage(message) ||
@@ -218,7 +219,9 @@ export class WhatsappBaileysService {
           )
             continue;
 
-          const content = this._getMessageText(message);
+          let content = this._getMessageText(message);
+          if (!content || !content.startsWith('$')) continue;
+          content = content.slice(1).trim();
           const chatInternalIdentifier = this._buildChatInternalIdentifier(
             channel,
             message,
@@ -305,7 +308,7 @@ export class WhatsappBaileysService {
       message.message?.extendedTextMessage?.text ||
       message.message?.conversation ||
       JSON.stringify(message.message)
-    );
+    ).trim();
   }
 
   private _buildChatInternalIdentifier(

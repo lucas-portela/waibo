@@ -87,6 +87,7 @@ model Chat {
   internalIdentifier String   @unique // unique identifier for the chat (e.g., WhatsApp chat ID)
   name               String // name of the message recipient
   contact            String // phone number or another identifier (e.g., dicord user name)
+  botMemory          String? // short-term memory or context for the chat
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

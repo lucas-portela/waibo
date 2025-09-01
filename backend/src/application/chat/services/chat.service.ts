@@ -74,6 +74,7 @@ export class ChatService {
     const updatedChat = await this.chatRepository.update(chatId, {
       name: data.name,
       contact: data.contact,
+      botMemory: data.botMemory,
     });
 
     return ChatDto.parse(updatedChat);

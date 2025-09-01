@@ -20,6 +20,12 @@ export class ChatResponseDto {
   contact: string;
 
   @ApiProperty({
+    description: 'Short-term memory or context for the chat',
+    example: 'User is interested in product X',
+  })
+  botMemory?: string;
+
+  @ApiProperty({
     description: 'Internal identifier for the chat',
     example: 'chat_internal_123',
   })

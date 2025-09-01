@@ -1,6 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { BOT_REPOSITORY } from '../tokens';
-import type { BotRepository } from 'src/domain/bot/repositories/bot.repository';
+import { BOT_INTENT_REPOSITORY, BOT_REPOSITORY } from '../tokens';
+import type {
+  BotIntentRepository,
+  BotRepository,
+} from 'src/domain/bot/repositories/bot.repository';
 import { CreateBotDto } from '../dtos/create-bot.dto';
 import { UpdateBotDto } from '../dtos/update-bot.dto';
 import { BotDto } from '../dtos/bot.dto';
@@ -11,6 +14,8 @@ export class BotService {
   constructor(
     @Inject(BOT_REPOSITORY)
     private readonly botRepository: BotRepository,
+    @Inject(BOT_INTENT_REPOSITORY)
+    private readonly botIntentRepository: BotIntentRepository,
   ) {}
 
   async create(data: CreateBotDto): Promise<BotDto> {
@@ -57,6 +62,7 @@ export class BotService {
       throw new BotNotFoundError(id);
     }
 
+    await this.botIntentRepository.deleteByBotId(id);
     await this.botRepository.delete(id);
   }
 }

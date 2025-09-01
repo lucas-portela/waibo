@@ -25,6 +25,15 @@ export class ChatPrismaRepository implements ChatRepository {
     return chats.map((chat) => new ChatEntity(chat));
   }
 
+  async findByInternalIdentifier(
+    internalIdentifier: string,
+  ): Promise<ChatEntity | null> {
+    const chat = await this.prisma.chat.findUnique({
+      where: { internalIdentifier },
+    });
+    return chat ? new ChatEntity(chat) : null;
+  }
+
   async findByContact(contact: string): Promise<ChatEntity[]> {
     const chats = await this.prisma.chat.findMany({ where: { contact } });
     return chats.map((chat) => new ChatEntity(chat));

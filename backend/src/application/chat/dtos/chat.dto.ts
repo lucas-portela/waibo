@@ -6,8 +6,8 @@ export const ChatDto = z.object({
   contact: z.string().min(1).max(100),
   internalIdentifier: z.string().min(1),
   messageChannelId: z.string().min(1),
-  createdAt: z.date(),
-  updatedAt: z.date().optional(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date().optional(),
 });
 
 export type ChatDto = z.infer<typeof ChatDto>;

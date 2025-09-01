@@ -58,10 +58,10 @@ model BotIntent {
 }
 
 enum MessageChannelStatus {
-  CONNECTED
-  ONLINE
-  OFFLINE
   DISCONNECTED
+  OPEN
+  CONNECTING
+  CLOSE
 }
 
 model MessageChannel {
@@ -72,7 +72,7 @@ model MessageChannel {
   status    MessageChannelStatus
   userId    String               @map("userId")
   botId     String
-  sessionId String? // session identifier for the channel
+  sessionId String?              @unique // session identifier for the channel
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
 
@@ -84,9 +84,9 @@ model MessageChannel {
 model Chat {
   id                 String   @id @default(cuid())
   messageChannelId   String
+  internalIdentifier String   @unique // unique identifier for the chat (e.g., WhatsApp chat ID)
   name               String // name of the message recipient
   contact            String // phone number or another identifier (e.g., dicord user name)
-  internalIdentifier String // unique identifier for the chat (e.g., WhatsApp chat ID)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

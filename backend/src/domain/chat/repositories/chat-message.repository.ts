@@ -21,4 +21,5 @@ export interface ChatMessageRepository {
     chatMessage: ChatMessageUpdate,
   ): Promise<ChatMessageEntity>;
   delete(id: string): Promise<void>;
+  deleteByChatId(chatId: string): Promise<void>;
 }

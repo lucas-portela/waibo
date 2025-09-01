@@ -52,4 +52,8 @@ export class ChatMessagePrismaRepository implements ChatMessageRepository {
   async delete(id: string): Promise<void> {
     await this.prisma.chatMessage.delete({ where: { id } });
   }
+
+  async deleteByChatId(chatId: string): Promise<void> {
+    await this.prisma.chatMessage.deleteMany({ where: { chatId } });
+  }
 }

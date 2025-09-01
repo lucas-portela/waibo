@@ -51,4 +51,14 @@ export class BotIntentPrismaRepository implements BotIntentRepository {
   async delete(id: string): Promise<void> {
     await this.prisma.botIntent.delete({ where: { id } });
   }
+
+  async deleteByUserId(userId: string): Promise<void> {
+    await this.prisma.botIntent.deleteMany({
+      where: {
+        bot: {
+          userId,
+        },
+      },
+    });
+  }
 }

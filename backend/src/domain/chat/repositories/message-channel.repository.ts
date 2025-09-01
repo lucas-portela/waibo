@@ -11,17 +11,13 @@ export type MessageChannelCreate = Omit<
   MessageChannelEntitySnapshot,
   keyof BaseSnapshot
 >;
-export type MessageChannelFindBySessionIdAndType = Required<
-  Pick<MessageChannelEntitySnapshot, 'sessionId' | 'type'>
->;
 
 export interface MessageChannelRepository {
   findById(id: string): Promise<MessageChannelEntity | null>;
-  findBySessionIdAndType(
-    params: MessageChannelFindBySessionIdAndType,
-  ): Promise<MessageChannelEntity | null>;
+  findBySessionId(sessionId: string): Promise<MessageChannelEntity | null>;
   findByUserId(userId: string): Promise<MessageChannelEntity[]>;
   findByBotId(botId: string): Promise<MessageChannelEntity[]>;
+  findByType(type: string): Promise<MessageChannelEntity[]>;
   findByName(name: string): Promise<MessageChannelEntity | null>;
   create(messageChannel: MessageChannelCreate): Promise<MessageChannelEntity>;
   update(

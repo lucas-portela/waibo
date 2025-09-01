@@ -12,6 +12,7 @@ import { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
 import * as amqp from 'amqp-connection-manager';
 import { RABBIT_MQ_CONFIG } from './rabbitmq.config';
 import { ConsumeMessage } from 'amqplib';
+import { ZodError } from 'zod';
 
 const EXCHANGE = 'amq.topic';
 
@@ -65,7 +66,6 @@ export class RabbitMQService implements QueueService {
     try {
       await this.channel.publish(EXCHANGE, topic, {
         data,
-        dto,
         topic,
         sentAt: new Date(),
       } as RabbitMQMessage<Type>);
@@ -101,10 +101,20 @@ export class RabbitMQService implements QueueService {
             }
           })
           .catch((err) => {
+            if (err instanceof ZodError) {
+              this.logger.error(
+                `Invalid dto in topic ${subscription.topic}:`,
+                msg?.content.toString(),
+                err,
+              );
+              this.channel.ack(msg);
+              return;
+            }
             this.logger.error(
               `Error processing message for ${subscription.topic}:`,
               err,
             );
+
             if (msg) {
               setTimeout(() => {
                 if (!this.conn.isConnected()) return;
@@ -125,7 +135,8 @@ export class RabbitMQService implements QueueService {
 
   async once<Type>(params: QueueOnce<Type>): Promise<Type | null> {
     let completed = false;
-    const { promise, resolve } = Promise.withResolvers<Type | null>();
+    let resolve: (value: Type | null) => void;
+    const promise = new Promise<Type | null>((res) => (resolve = res));
 
     const subscription = await this.subscribe<Type>({
       topic: params.topic,
@@ -133,6 +144,7 @@ export class RabbitMQService implements QueueService {
       handler: async ({ data }) => {
         completed = true;
         resolve(data);
+        await new Promise((r) => setTimeout(r, 0));
         await subscription.unsubscribe();
       },
     });

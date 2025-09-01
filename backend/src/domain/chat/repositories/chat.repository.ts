@@ -6,6 +6,9 @@ export type ChatCreate = Omit<ChatEntitySnapshot, keyof BaseSnapshot>;
 
 export interface ChatRepository {
   findById(id: string): Promise<ChatEntity | null>;
+  findByInternalIdentifier(
+    internalIdentifier: string,
+  ): Promise<ChatEntity | null>;
   findByMessageChannelId(messageChannelId: string): Promise<ChatEntity[]>;
   findByContact(contact: string): Promise<ChatEntity[]>;
   create(chat: ChatCreate): Promise<ChatEntity>;

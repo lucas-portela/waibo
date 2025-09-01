@@ -5,10 +5,10 @@ import {
 } from 'src/domain/base.entity';
 
 export enum MessageChannelStatus {
-  CONNECTED = 'CONNECTED',
-  ONLINE = 'ONLINE',
-  OFFLINE = 'OFFLINE',
   DISCONNECTED = 'DISCONNECTED',
+  OPEN = 'OPEN',
+  CONNECTING = 'CONNECTING',
+  CLOSE = 'CLOSE',
 }
 
 export type MessageChannelEntitySnapshot = EntitySnapshot<{

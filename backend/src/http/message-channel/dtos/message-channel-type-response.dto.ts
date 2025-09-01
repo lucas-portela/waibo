@@ -13,7 +13,7 @@ export class MessageChannelTypeDto {
   })
   @IsString()
   @Expose()
-  id: string;
+  type: string;
 
   /**
    * Name of the message channel type

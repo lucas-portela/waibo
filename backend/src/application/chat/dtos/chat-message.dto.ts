@@ -4,7 +4,7 @@ export const ChatMessageDto = z.object({
   chatId: z.string().min(1),
   sender: z.string().min(1),
   content: z.string().min(1),
-  createdAt: z.date(),
+  createdAt: z.coerce.date(),
 });
 
 export type ChatMessageDto = z.infer<typeof ChatMessageDto>;

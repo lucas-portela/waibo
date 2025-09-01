@@ -20,12 +20,11 @@ export class MessageChannelPrismaRepository
     return messageChannel ? new MessageChannelEntity(messageChannel) : null;
   }
 
-  async findBySessionIdAndType(params: {
-    sessionId: string;
-    type: string;
-  }): Promise<MessageChannelEntity | null> {
-    const messageChannel = await this.prisma.messageChannel.findFirst({
-      where: { sessionId: params.sessionId, type: params.type },
+  async findBySessionId(
+    sessionId: string,
+  ): Promise<MessageChannelEntity | null> {
+    const messageChannel = await this.prisma.messageChannel.findUnique({
+      where: { sessionId: sessionId },
     });
     return messageChannel ? new MessageChannelEntity(messageChannel) : null;
   }
@@ -42,6 +41,15 @@ export class MessageChannelPrismaRepository
   async findByBotId(botId: string): Promise<MessageChannelEntity[]> {
     const messageChannels = await this.prisma.messageChannel.findMany({
       where: { botId },
+    });
+    return messageChannels.map(
+      (messageChannel) => new MessageChannelEntity(messageChannel),
+    );
+  }
+
+  async findByType(type: string): Promise<MessageChannelEntity[]> {
+    const messageChannels = await this.prisma.messageChannel.findMany({
+      where: { type },
     });
     return messageChannels.map(
       (messageChannel) => new MessageChannelEntity(messageChannel),

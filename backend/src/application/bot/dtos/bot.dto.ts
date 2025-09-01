@@ -5,8 +5,8 @@ export const BotDto = z.object({
   name: z.string(),
   prompt: z.string(),
   userId: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 });
 
 export type BotDto = z.infer<typeof BotDto>;

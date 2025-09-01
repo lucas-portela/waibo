@@ -16,6 +16,7 @@ import { Inject } from '@nestjs/common';
 import { QUEUE_SERVICE } from 'src/application/queue/tokens';
 import type { MessageChannelRepository } from 'src/domain/chat/repositories/message-channel.repository';
 import { MESSAGE_CHANNEL_REPOSITORY } from '../tokens';
+import { MessageChannelStatus } from 'src/domain/chat/entities/message-channel.entity';
 
 export class ChannelPairingService {
   constructor(
@@ -37,7 +38,7 @@ export class ChannelPairingService {
         channelType: channel.type,
         channelId: channel.id,
       }),
-      timeout: 60000, // 60 seconds
+      timeout: 60000, // 1 minute
       dto: PairingDataDto,
       afterSubscribe: async () => {
         await this.queueService.publish({
@@ -102,11 +103,31 @@ export class ChannelPairingService {
     return MessageChannelDto.parse(updatedChannel);
   }
 
+  async unbindSession(sessionId: string): Promise<MessageChannelDto | null> {
+    const channel =
+      await this.messageChannelRepository.findBySessionId(sessionId);
+    if (!channel) {
+      return null;
+    }
+
+    const updatedChannel = await this.messageChannelRepository.update(
+      channel.id,
+      {
+        sessionId: null,
+        status: MessageChannelStatus.DISCONNECTED,
+      },
+    );
+
+    return MessageChannelDto.parse(updatedChannel);
+  }
+
   async unpair(channelId: string): Promise<MessageChannelDto> {
     const channel = await this.messageChannelRepository.findById(channelId);
     if (!channel) {
       throw new MessageChannelNotFoundError(channelId);
     }
+
+    if (!channel.sessionId) return MessageChannelDto.parse(channel);
 
     await this.queueService.publish({
       topic: MESSAGE_CHANNEL_UNPAIR(channel.type),
@@ -114,14 +135,10 @@ export class ChannelPairingService {
       dto: MessageChannelDto,
     });
 
-    const updatedChannel = await this.messageChannelRepository.update(
-      channel.id,
-      {
-        sessionId: null,
-      },
+    return (
+      (await this.unbindSession(channel.sessionId)) ||
+      MessageChannelDto.parse(channel)
     );
-
-    return MessageChannelDto.parse(updatedChannel);
   }
 
   async onUnpair({
@@ -132,7 +149,7 @@ export class ChannelPairingService {
     handler: QueueSubscriptionHandler<MessageChannelDto>;
   }) {
     return this.queueService.subscribe({
-      topic: MESSAGE_CHANNEL_REQUEST_PAIRING(channelType),
+      topic: MESSAGE_CHANNEL_UNPAIR(channelType),
       dto: MessageChannelDto,
       handler,
     });

@@ -1,11 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { MessageChannelRepository } from 'src/domain/chat/repositories/message-channel.repository';
 import type { BotRepository } from 'src/domain/bot/repositories/bot.repository';
-import type {
-  QueueService,
-  QueueSubscription,
-  QueueSubscriptionHandler,
-} from 'src/application/queue/ports/queue.service';
+import type { QueueService } from 'src/application/queue/ports/queue.service';
 import { QUEUE_SERVICE } from 'src/application/queue/tokens';
 import { CreateMessageChannelDto } from '../dtos/create-message-channel.dto';
 import _ from 'lodash';
@@ -21,7 +17,6 @@ import { UserNotFoundError } from 'src/core/error/user-not-found.error';
 import { MessageChannelDto } from '../dtos/message-channel.dto';
 import { MessageChannelNotFoundError } from 'src/core/error/message-channel-not-found.error';
 import {
-  MESSAGE_CHANNEL_INPUT_EVENT,
   MESSAGE_CHANNEL_OUTPUT_EVENT,
   MESSAGE_CHANNEL_STATUS_UPDATE,
 } from '../topics';
@@ -29,31 +24,32 @@ import { UpdateMessageChannelDetailsDto } from '../dtos/update-message-channel-d
 import { UserService } from 'src/application/user/services/user.service';
 import { ChannelPairingService } from './channel-pairing.service';
 import { MessageChannelOutputEventDto } from '../dtos/message-channel-output-event.dto';
-import { MessageChannelInputEventDto } from '../dtos/message-channel-input-event.dto';
+import { ChatService } from './chat.service';
 
-export type AvailableChannelType = { id: string; name: string };
+export type ChannelType = { type: string; name: string };
 
 @Injectable()
 export class MessageChannelService {
-  private readonly _availableChannelTypes: AvailableChannelType[] = [];
+  private readonly _availableChannelTypes: ChannelType[] = [];
 
   constructor(
     @Inject(QUEUE_SERVICE) private readonly queueService: QueueService,
     private readonly userService: UserService,
     private readonly pairingService: ChannelPairingService,
+    private readonly chatService: ChatService,
     @Inject(MESSAGE_CHANNEL_REPOSITORY)
     private readonly messageChannelRepository: MessageChannelRepository,
     // TODO: Replace by bot service
     @Inject(BOT_REPOSITORY) private readonly botRepository: BotRepository,
   ) {}
 
-  getAvailableChannelTypes(): AvailableChannelType[] {
+  getAvailableChannelTypes(): ChannelType[] {
     return _.cloneDeep(this._availableChannelTypes);
   }
 
-  registerChannelType(id: string, name: string) {
-    if (!this._availableChannelTypes.find((channel) => channel.id === id)) {
-      this._availableChannelTypes.push({ id, name });
+  registerChannelType({ type, name }: ChannelType) {
+    if (!this._availableChannelTypes.find((channel) => channel.type === type)) {
+      this._availableChannelTypes.push({ type, name });
     }
   }
 
@@ -76,17 +72,13 @@ export class MessageChannelService {
 
   async updateSessionStatus({
     sessionId,
-    type,
     status,
   }: {
     sessionId: string;
-    type: string;
     status: MessageChannelStatus;
   }): Promise<MessageChannelDto> {
-    const channel = await this.messageChannelRepository.findBySessionIdAndType({
-      sessionId,
-      type,
-    });
+    const channel =
+      await this.messageChannelRepository.findBySessionId(sessionId);
     if (!channel) {
       throw new MessageChannelNotFoundError();
     }
@@ -125,15 +117,7 @@ export class MessageChannelService {
       userId: channel.userId,
     });
 
-    if (
-      data.type != channel.type &&
-      channel.sessionId &&
-      [
-        MessageChannelStatus.CONNECTED,
-        MessageChannelStatus.ONLINE,
-        MessageChannelStatus.OFFLINE,
-      ].includes(channel.status)
-    ) {
+    if (data.type != channel.type && channel.sessionId) {
       await this.pairingService.unpair(channel.id);
     }
 
@@ -157,12 +141,27 @@ export class MessageChannelService {
     return MessageChannelDto.parse(channel);
   }
 
+  async findByType(type: string): Promise<MessageChannelDto[]> {
+    const channels = await this.messageChannelRepository.findByType(type);
+    return channels.map((channel) => MessageChannelDto.parse(channel));
+  }
+
   async findByUserId(userId: string): Promise<MessageChannelDto[]> {
     const channels = await this.messageChannelRepository.findByUserId(userId);
     return channels.map((channel) => MessageChannelDto.parse(channel));
   }
 
   async delete(channelId: string): Promise<void> {
+    const channel = await this.messageChannelRepository.findById(channelId);
+    if (!channel) {
+      throw new MessageChannelNotFoundError(channelId);
+    }
+
+    if (channel.sessionId) await this.pairingService.unpair(channelId);
+    const chats = await this.chatService.findChatsByMessageChannelId(channelId);
+    for (const chat of chats) {
+      await this.chatService.deleteChat(chat.id);
+    }
     await this.messageChannelRepository.delete(channelId);
   }
 
@@ -174,49 +173,13 @@ export class MessageChannelService {
     });
   }
 
-  async onOutputEvent({
-    channelType,
-    handler,
-  }: {
-    channelType: string;
-    handler: QueueSubscriptionHandler<MessageChannelOutputEventDto>;
-  }): Promise<QueueSubscription> {
-    return this.queueService.subscribe({
-      topic: MESSAGE_CHANNEL_OUTPUT_EVENT(channelType),
-      dto: MessageChannelOutputEventDto,
-      handler,
-    });
-  }
-
-  async inputEvent(data: MessageChannelInputEventDto) {
-    await this.queueService.publish({
-      topic: MESSAGE_CHANNEL_INPUT_EVENT(data.channel.type),
-      data,
-      dto: MessageChannelInputEventDto,
-    });
-  }
-
-  async onInputEvent({
-    channelType,
-    handler,
-  }: {
-    channelType: string;
-    handler: QueueSubscriptionHandler<MessageChannelInputEventDto>;
-  }): Promise<QueueSubscription> {
-    return this.queueService.subscribe({
-      topic: MESSAGE_CHANNEL_INPUT_EVENT(channelType),
-      dto: MessageChannelInputEventDto,
-      handler,
-    });
-  }
-
   // Helpers
   private async _validateChannelBindings(
     data: Partial<Pick<MessageChannelEntity, 'type' | 'botId' | 'userId'>>,
   ) {
     if (data.type) {
       const channelTypeIsAvailable = this._availableChannelTypes.some(
-        (channel) => channel.id === data.type,
+        (channel) => channel.type === data.type,
       );
       if (!channelTypeIsAvailable) {
         throw new MessageChannelTypeNotAvailableError(data.type);

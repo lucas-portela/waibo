@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   Param,
   Post,
@@ -12,9 +11,11 @@ import {
 import { BotService } from 'src/application/bot/services/bot.service';
 import { CreateBotRequestDto } from './dtos/create-bot-request.dto';
 import { UpdateBotRequestDto } from './dtos/update-bot-request.dto';
+import { BotResponseDto } from './dtos/bot-response.dto';
 import { AdminOnly } from '../auth/auth.decorators';
 import { AuthenticatedRequestDto } from '../auth/dtos/authenticated-request.dto';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { UnauthorizedError } from 'src/core/error/unauthorized.error';
 
 @ApiTags('Bots')
 @Controller('bot')
@@ -23,6 +24,11 @@ export class BotController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new bot' })
+  @ApiResponse({
+    status: 201,
+    description: 'Bot created successfully',
+    type: BotResponseDto,
+  })
   async create(
     @Body() createBotDto: CreateBotRequestDto,
     @Request() req: AuthenticatedRequestDto,
@@ -38,6 +44,12 @@ export class BotController {
   @ApiOperation({
     summary: 'Get all bots for the authenticated user',
   })
+  @ApiResponse({
+    status: 200,
+    description: 'User bots retrieved successfully',
+    type: BotResponseDto,
+    isArray: true,
+  })
   async findMyBots(@Request() req: AuthenticatedRequestDto) {
     const userId = req.user.id;
     return this.botService.findByUserId(userId);
@@ -48,12 +60,23 @@ export class BotController {
   @ApiOperation({
     summary: 'Get all bots for a specific user (admin only)',
   })
+  @ApiResponse({
+    status: 200,
+    description: 'User bots retrieved successfully',
+    type: BotResponseDto,
+    isArray: true,
+  })
   async findByUserId(@Param('userId') userId: string) {
     return this.botService.findByUserId(userId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific bot by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Bot retrieved successfully',
+    type: BotResponseDto,
+  })
   async findById(
     @Param('id') id: string,
     @Request() req: AuthenticatedRequestDto,
@@ -62,7 +85,7 @@ export class BotController {
 
     // Check if user is admin or owner of the bot
     if (!req.isAdmin && bot.userId !== req.user.id) {
-      throw new ForbiddenException(
+      throw new UnauthorizedError(
         'You do not have permission to access this bot',
       );
     }
@@ -72,6 +95,11 @@ export class BotController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update a specific bot' })
+  @ApiResponse({
+    status: 200,
+    description: 'Bot updated successfully',
+    type: BotResponseDto,
+  })
   async update(
     @Param('id') id: string,
     @Body() updateBotDto: UpdateBotRequestDto,
@@ -81,7 +109,7 @@ export class BotController {
 
     // Check if user is admin or owner of the bot
     if (!req.isAdmin && bot.userId !== req.user.id) {
-      throw new ForbiddenException(
+      throw new UnauthorizedError(
         'You do not have permission to update this bot',
       );
     }
@@ -91,6 +119,10 @@ export class BotController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a specific bot' })
+  @ApiResponse({
+    status: 204,
+    description: 'Bot deleted successfully',
+  })
   async delete(
     @Param('id') id: string,
     @Request() req: AuthenticatedRequestDto,
@@ -99,7 +131,7 @@ export class BotController {
 
     // Check if user is admin or owner of the bot
     if (!req.isAdmin && bot.userId !== req.user.id) {
-      throw new ForbiddenException(
+      throw new UnauthorizedError(
         'You do not have permission to delete this bot',
       );
     }

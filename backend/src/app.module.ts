@@ -14,12 +14,15 @@ import { UserModule } from './application/user/user.module';
 import { ChatModule } from './application/chat/chat.module';
 import { BotModule } from './application/bot/bot.module';
 import { BotHttpModule } from './http/bot/bot-http.module';
+import { ChatHttpModule } from './http/chat/chat-http.module';
+import { WhatsappBaileysModule } from './infra/message-channel/whatsapp-baileys/whatsapp-baileys.module';
+import { rabbitMqConfig } from './infra/queue/rabbitmq/rabbitmq.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, jwtTokenConfig],
+      load: [appConfig, jwtTokenConfig, rabbitMqConfig],
     }),
     PrismaModule,
     BcryptModule,
@@ -33,6 +36,8 @@ import { BotHttpModule } from './http/bot/bot-http.module';
     UserHttpModule,
     MessageChannelHttpModule,
     BotHttpModule,
+    ChatHttpModule,
+    WhatsappBaileysModule,
   ],
   controllers: [],
   providers: [],

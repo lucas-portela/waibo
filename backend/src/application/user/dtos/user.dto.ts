@@ -7,8 +7,8 @@ export const UserDto = z.object({
   name: z.string().min(3).max(100),
   password: z.string().min(6).max(100),
   role: z.enum(UserRole).default(UserRole.USER),
-  createdAt: z.date(),
-  updatedAt: z.date().optional(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date().optional(),
 });
 
 export type UserDto = z.infer<typeof UserDto>;

@@ -28,4 +28,5 @@ export interface BotIntentRepository {
   create(botIntent: BotIntentCreate): Promise<BotIntentEntity>;
   update(id: string, botIntent: BotIntentUpdate): Promise<BotIntentEntity>;
   delete(id: string): Promise<void>;
+  deleteByUserId(userId: string): Promise<void>;
 }

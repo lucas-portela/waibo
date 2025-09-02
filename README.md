@@ -76,7 +76,7 @@ Após a execução completa:
     - user: admin
     - password: admin
 - **Documentação da API (Swagger)**: http://localhost:3001
-- **Monitoramento RabbitMQ**: http://localhost:15672/#/exchanges/%2F/amq.topic
+- **Monitoramento RabbitMQ**: http://localhost:15672
     - user: guest
     - password: guest
 

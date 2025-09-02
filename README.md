@@ -68,6 +68,14 @@ backend/src/
    npm run seed:prisma
    ```
 
+5. **Reinicie os Containers Docker**
+
+    Feche o comando docker compose executado no passo 3 e execute novamente:
+    ```bash
+   docker compose --profile=dev up
+   ```
+
+
 ### Acessos
 
 Após a execução completa:

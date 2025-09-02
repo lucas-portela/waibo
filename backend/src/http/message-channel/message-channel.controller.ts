@@ -19,6 +19,7 @@ import { ChannelPairingService } from 'src/application/chat/services/channel-pai
 import { UnauthorizedError } from 'src/core/error/unauthorized.error';
 import { plainToInstance } from 'class-transformer';
 import { MessageChannelResponseDto } from './dtos/message-channel-response.dto';
+import { UpdateMessageChannelRequestDto } from './dtos/update-message-channel-request.dto';
 
 @ApiTags('Message Channels')
 @Controller('channel')
@@ -59,6 +60,18 @@ export class MessageChannelController {
       ...createMessageChannelDto,
       userId,
     });
+    return plainToInstance(MessageChannelResponseDto, channel);
+  }
+
+  @Get(':channelId')
+  @ApiOperation({ summary: 'Get a specific message channel by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Message channel retrieved successfully',
+    type: MessageChannelResponseDto,
+  })
+  async findById(@Param('channelId') channelId: string) {
+    const channel = await this.messageChannelService.findById(channelId);
     return plainToInstance(MessageChannelResponseDto, channel);
   }
 
@@ -103,7 +116,7 @@ export class MessageChannelController {
   })
   async update(
     @Param('channelId') channelId: string,
-    @Body() updateMessageChannelDto: Partial<CreateMessageChannelRequestDto>,
+    @Body() updateMessageChannelDto: UpdateMessageChannelRequestDto,
     @Request() req: AuthenticatedRequestDto,
   ) {
     await this._checkChannelACL(req, channelId);

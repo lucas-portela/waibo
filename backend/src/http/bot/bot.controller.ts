@@ -46,6 +46,15 @@ export class BotController {
       ...createBotDto,
       userId,
     });
+    if (createBotDto.intents && createBotDto.intents.length > 0) {
+      for (const intent of createBotDto.intents) {
+        await this.botIntentService.create({
+          botId: bot.id,
+          trigger: intent.trigger,
+          response: intent.response,
+        });
+      }
+    }
     return plainToInstance(BotResponseDto, bot);
   }
 

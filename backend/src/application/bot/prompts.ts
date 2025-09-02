@@ -2,7 +2,7 @@ import { ChatSender } from '@prisma/client';
 import { ChatMessageDto } from '../chat/dtos/chat-message.dto';
 import { BotIntentDto } from './dtos/bot-intent.dto';
 
-export const BOT_SYSTEM_PROMPT = ({
+export const BOT_ANSWER_PROMPT = ({
   taskDescription,
   memory,
   intents,
@@ -53,4 +53,20 @@ export const BOT_SYSTEM_PROMPT = ({
     "response": "<your full response to the user, or null if an intent was triggered>"
   }\n`;
   return prompt;
+};
+
+export const GENERATE_TAG_AND_NAME_PROMPT = ({
+  trigger,
+  response,
+}: {
+  trigger: string;
+  response: string;
+}) => {
+  return (
+    `Generate a short snake_case tag (eg.: product_list) and a Human Readable name (eg.: "Product List") for the following user predefined message:\n` +
+    `Message Trigger: ${trigger}\n` +
+    `Message Response: ${response}\n\n` +
+    `IMPORTANT: the name should be in the same language as the trigger and response.\n` +
+    `When you respond, use the following format: {"tag": "<the generated tag>", "name": "<the generated name>"}\n`
+  );
 };

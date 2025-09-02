@@ -19,6 +19,7 @@ export class BotIntentPrismaRepository implements BotIntentRepository {
   async findByBotId(botId: string): Promise<BotIntentEntity[]> {
     const botIntents = await this.prisma.botIntent.findMany({
       where: { botId },
+      orderBy: { createdAt: 'desc' },
     });
     return botIntents.map((botIntent) => new BotIntentEntity(botIntent));
   }

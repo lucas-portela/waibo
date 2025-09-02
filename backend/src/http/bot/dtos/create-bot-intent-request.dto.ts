@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MinLength, MaxLength } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsOptional } from 'class-validator';
 
 export class CreateBotIntentRequestDto {
   @ApiProperty({
@@ -10,8 +10,9 @@ export class CreateBotIntentRequestDto {
   })
   @IsString()
   @MinLength(1)
+  @IsOptional()
   @MaxLength(100)
-  tag: string;
+  tag?: string;
 
   @ApiProperty({
     description: 'Name of the bot intent',
@@ -20,9 +21,10 @@ export class CreateBotIntentRequestDto {
     maxLength: 100,
   })
   @IsString()
+  @IsOptional()
   @MinLength(1)
   @MaxLength(100)
-  name: string;
+  name?: string;
 
   @ApiProperty({
     description: 'Trigger phrase for the bot intent',

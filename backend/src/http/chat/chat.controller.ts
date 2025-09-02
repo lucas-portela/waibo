@@ -30,6 +30,18 @@ export class ChatController {
     private readonly messageChannelService: MessageChannelService,
   ) {}
 
+  @Get(':chatId')
+  @ApiOperation({ summary: 'Get a specific chat by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Chat retrieved successfully',
+    type: ChatResponseDto,
+  })
+  async findById(@Param('chatId') chatId: string) {
+    const chat = await this.chatService.findChatById(chatId);
+    return plainToInstance(ChatResponseDto, chat);
+  }
+
   @Get('channel/:channelId')
   @ApiOperation({ summary: 'List chats by channel ID' })
   @ApiResponse({

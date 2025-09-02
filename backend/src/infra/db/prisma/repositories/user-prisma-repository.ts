@@ -32,7 +32,9 @@ export class UserPrismaRepository implements UserRepository {
   }
 
   async findAll(): Promise<UserEntity[]> {
-    const users = await this.prisma.user.findMany();
+    const users = await this.prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
     return users.map((user) => new UserEntity(user));
   }
 

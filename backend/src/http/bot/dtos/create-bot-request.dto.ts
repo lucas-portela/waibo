@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MinLength, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsString, MinLength, MaxLength, IsArray } from 'class-validator';
+import { CreateBotIntentRequestDto } from './create-bot-intent-request.dto';
 
 export class CreateBotRequestDto {
   @ApiProperty({
@@ -23,4 +25,19 @@ export class CreateBotRequestDto {
   @MinLength(1)
   @MaxLength(2000)
   prompt: string;
+
+  @ApiProperty({
+    description: 'List of intents for the bot',
+    type: [CreateBotIntentRequestDto],
+    example: [
+      { trigger: 'Hello', response: 'Hi there! How can I assist you today?' },
+      {
+        trigger: 'What is your return policy?',
+        response: 'Our return policy is...',
+      },
+    ],
+  })
+  @IsArray()
+  @Type(() => CreateBotIntentRequestDto)
+  intents: CreateBotIntentRequestDto[];
 }

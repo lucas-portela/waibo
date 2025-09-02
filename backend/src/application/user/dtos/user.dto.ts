@@ -3,9 +3,9 @@ import { z } from 'zod';
 
 export const UserDto = z.object({
   id: z.string().nonempty().nonoptional(),
-  username: z.string().min(3).max(30),
-  name: z.string().min(3).max(100),
-  password: z.string().min(6).max(100),
+  username: z.string().min(3),
+  name: z.string().min(3),
+  password: z.string().min(6),
   role: z.enum(UserRole).default(UserRole.USER),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date().optional(),

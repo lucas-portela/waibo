@@ -113,7 +113,7 @@ export class MessageChannelService {
 
     await this._validateChannelBindings({
       type: data.type,
-      botId: channel.botId,
+      botId: data.botId || channel.botId,
       userId: channel.userId,
     });
 
@@ -127,6 +127,7 @@ export class MessageChannelService {
         name: data.name,
         contact: data.contact,
         type: data.type,
+        botId: data.botId,
       },
     );
 

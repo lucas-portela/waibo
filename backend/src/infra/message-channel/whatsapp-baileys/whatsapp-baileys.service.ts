@@ -211,16 +211,15 @@ export class WhatsappBaileysService {
     sock.ev.on('messages.upsert', async ({ messages }) => {
       try {
         for (const message of messages) {
-          // TODO: ignore messages from myself and remove $ filter
           if (
-            // message.key.fromMe ||
+            message.key.fromMe ||
             this._isBroadcastMessage(message) ||
             this._isGroupMessage(message)
           )
             continue;
 
           let content = this._getMessageText(message);
-          if (!content || !content.startsWith('$')) continue;
+          if (!content) continue;
           content = content.slice(1).trim();
           const chatInternalIdentifier = this._buildChatInternalIdentifier(
             channel,

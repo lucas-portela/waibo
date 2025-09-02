@@ -2,9 +2,9 @@ import { MessageChannelStatus } from 'src/domain/chat/entities/message-channel.e
 import { z } from 'zod';
 
 export const CreateMessageChannelDto = z.object({
-  name: z.string().min(1).max(100),
-  contact: z.string().min(1).max(100),
-  type: z.string().min(1).max(50),
+  name: z.string().min(1),
+  contact: z.string().min(1),
+  type: z.string().min(1),
   status: z.enum(MessageChannelStatus).optional(),
   userId: z.string().min(1),
   botId: z.string().min(1),

@@ -3,9 +3,9 @@ import { IsString, MinLength, MaxLength, IsOptional } from 'class-validator';
 
 /*
 export const UpdateMessageChannelDetailsDto = z.object({
-  name: z.string().min(1).max(100).optional(),
-  contact: z.string().min(1).max(100).optional(),
-  type: z.string().min(1).max(50).optional(),
+  name: z.string().min(1).optional(),
+  contact: z.string().min(1).optional(),
+  type: z.string().min(1).optional(),
 });
 */
 export class UpdateMessageChannelRequestDto {
@@ -47,4 +47,17 @@ export class UpdateMessageChannelRequestDto {
   @MinLength(1)
   @MaxLength(50)
   type?: string;
+
+  @ApiProperty({
+    description: 'ID of the bot associated with the channel',
+    example: 'bot_123456',
+    minLength: 1,
+    maxLength: 50,
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(50)
+  botId?: string;
 }

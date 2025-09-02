@@ -21,6 +21,7 @@ export class ChatPrismaRepository implements ChatRepository {
   ): Promise<ChatEntity[]> {
     const chats = await this.prisma.chat.findMany({
       where: { messageChannelId },
+      orderBy: { createdAt: 'desc' },
     });
     return chats.map((chat) => new ChatEntity(chat));
   }
@@ -35,7 +36,10 @@ export class ChatPrismaRepository implements ChatRepository {
   }
 
   async findByContact(contact: string): Promise<ChatEntity[]> {
-    const chats = await this.prisma.chat.findMany({ where: { contact } });
+    const chats = await this.prisma.chat.findMany({
+      where: { contact },
+      orderBy: { createdAt: 'desc' },
+    });
     return chats.map((chat) => new ChatEntity(chat));
   }
 

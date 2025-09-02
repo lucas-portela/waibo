@@ -6,7 +6,7 @@ import type {
 } from '../ports/language-model.service';
 import { ChatService } from 'src/application/chat/services/chat.service';
 import { BotService } from './bot.service';
-import { BOT_SYSTEM_PROMPT } from '../prompts';
+import { BOT_ANSWER_PROMPT } from '../prompts';
 import { BotIntentService } from './bot-intent.service';
 import { OptimizedBotAnswerDto } from '../dtos/optimized-bot-answer.dto';
 import { ChatSender } from 'src/domain/chat/entities/chat-message.entity';
@@ -43,7 +43,7 @@ export class BotExecutorService {
         const history = messages.slice(-3);
 
         const prompt: AdvancedPrompt = {
-          system: BOT_SYSTEM_PROMPT({
+          system: BOT_ANSWER_PROMPT({
             taskDescription: bot.prompt,
             memory: data.chat.botMemory || 'empty',
             intents: intents,

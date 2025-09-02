@@ -3,9 +3,9 @@ import { z } from 'zod';
 
 export const MessageChannelDto = z.object({
   id: z.string().min(1),
-  name: z.string().min(1).max(100),
-  contact: z.string().min(1).max(100),
-  type: z.string().min(1).max(50),
+  name: z.string().min(1),
+  contact: z.string().min(1),
+  type: z.string().min(1),
   status: z.enum(MessageChannelStatus),
   userId: z.string().min(1),
   botId: z.string().min(1),

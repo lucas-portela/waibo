@@ -32,6 +32,7 @@ export class MessageChannelPrismaRepository
   async findByUserId(userId: string): Promise<MessageChannelEntity[]> {
     const messageChannels = await this.prisma.messageChannel.findMany({
       where: { userId },
+      orderBy: { createdAt: 'desc' },
     });
     return messageChannels.map(
       (messageChannel) => new MessageChannelEntity(messageChannel),
@@ -41,6 +42,7 @@ export class MessageChannelPrismaRepository
   async findByBotId(botId: string): Promise<MessageChannelEntity[]> {
     const messageChannels = await this.prisma.messageChannel.findMany({
       where: { botId },
+      orderBy: { createdAt: 'desc' },
     });
     return messageChannels.map(
       (messageChannel) => new MessageChannelEntity(messageChannel),
@@ -50,6 +52,7 @@ export class MessageChannelPrismaRepository
   async findByType(type: string): Promise<MessageChannelEntity[]> {
     const messageChannels = await this.prisma.messageChannel.findMany({
       where: { type },
+      orderBy: { createdAt: 'desc' },
     });
     return messageChannels.map(
       (messageChannel) => new MessageChannelEntity(messageChannel),

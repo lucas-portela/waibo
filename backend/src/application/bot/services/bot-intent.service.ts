@@ -1,5 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { BOT_INTENT_REPOSITORY, BOT_REPOSITORY } from '../tokens';
+import {
+  BOT_INTENT_REPOSITORY,
+  BOT_REPOSITORY,
+  LANGUAGE_MODEL_SERVICE,
+} from '../tokens';
 import type {
   BotIntentRepository,
   BotRepository,
@@ -9,6 +13,9 @@ import { UpdateBotIntentDto } from '../dtos/update-bot-intent.dto';
 import { BotIntentDto } from '../dtos/bot-intent.dto';
 import { BotIntentNotFoundError } from 'src/core/error/bot-intent-not-found.error';
 import { BotNotFoundError } from 'src/core/error/bot-not-found.error';
+import type { LanguageModelService } from '../ports/language-model.service';
+import { FailedToGenerateTagAndNameError } from 'src/core/error/failed-to-generate-tag-and-name.error';
+import { GENERATE_TAG_AND_NAME_PROMPT } from '../prompts';
 
 @Injectable()
 export class BotIntentService {
@@ -17,6 +24,8 @@ export class BotIntentService {
     private readonly botIntentRepository: BotIntentRepository,
     @Inject(BOT_REPOSITORY)
     private readonly botRepository: BotRepository,
+    @Inject(LANGUAGE_MODEL_SERVICE)
+    private readonly languageModelService: LanguageModelService,
   ) {}
 
   async create(data: CreateBotIntentDto): Promise<BotIntentDto> {
@@ -24,6 +33,28 @@ export class BotIntentService {
     if (!bot) {
       throw new BotNotFoundError(data.botId);
     }
+
+    if (!data.tag || !data.name) {
+      const generated = await this.languageModelService.generateSimple(
+        GENERATE_TAG_AND_NAME_PROMPT({
+          trigger: data.trigger,
+          response: data.response,
+        }),
+      );
+
+      let nameAndTag: { tag: string; name: string } | null = null;
+      try {
+        nameAndTag = JSON.parse(generated);
+        if (!nameAndTag || !nameAndTag.tag || !nameAndTag.name)
+          throw new Error();
+      } catch {
+        throw new FailedToGenerateTagAndNameError();
+      }
+
+      data.name = data.name || nameAndTag.name;
+      data.tag = data.tag || nameAndTag.tag;
+    }
+
     const botIntent = await this.botIntentRepository.create({
       botId: data.botId,
       tag: data.tag,

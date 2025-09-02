@@ -17,7 +17,10 @@ export class BotPrismaRepository implements BotRepository {
   }
 
   async findByUserId(userId: string): Promise<BotEntity[]> {
-    const bots = await this.prisma.bot.findMany({ where: { userId } });
+    const bots = await this.prisma.bot.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
     return bots.map((bot) => new BotEntity(bot));
   }
 

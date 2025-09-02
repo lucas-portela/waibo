@@ -75,7 +75,7 @@ Após a execução completa:
 - **Interface Web**: http://localhost:3000
     - user: admin
     - password: admin
-- **Documentação da API (Swagger)**: http://localhost:3001
+- **Documentação da API (Swagger)**: http://localhost:3001/api
 - **Monitoramento RabbitMQ**: http://localhost:15672
     - user: guest
     - password: guest

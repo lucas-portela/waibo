@@ -153,6 +153,55 @@ Simplesmente comente a importação no `app.module.ts`:
 export class AppModule {}
 ```
 
+# Estratégia de Otimização de Custos (Tokens) com BotIntent, Memória e Contexto Enxuto
+
+A aplicação adota uma abordagem híbrida para reduzir o consumo de tokens na interação com o modelo de linguagem. O objetivo é **deslocar o esforço da IA para onde ela agrega mais valor** (casos abertos/complexos) e **evitar gasto desnecessário de tokens de saída** em respostas que já conhecemos e padronizamos.
+
+## 1) BotIntent orientando a saída (economia de tokens de **output**)
+
+- **O que é BotIntent:** uma coleção de **gatilhos** e **respostas pré-definidas**, cada par identificado por uma **tag em snake_case** (ex.: `saudacao_olá`, `confirmacao_pagamento`, `encaminhar_humano`).
+- **Como a IA decide:** quando o bot precisa responder, o **prompt instrui a IA a**:
+  1. **Analisar o sentimento** e o conteúdo da mensagem;
+  2. **Detectar** se há uma **intenção pré-definida (BotIntent)** compatível;
+  3. **Priorizar** o retorno **apenas da tag** do BotIntent quando houver correspondência.
+- **Por que economiza:** ao **retornar só a tag**, evitamos uma resposta textual longa do modelo (tokens de saída). O sistema então **resolve a tag localmente**, buscando a resposta pronta e enviando-a ao usuário.  
+- **Fallback inteligente:** **se nenhuma intenção** for detectada, a IA **gera a resposta completa**, garantindo cobertura para perguntas abertas/novas.
+
+## 2) Memória leve e atualizável (economia de tokens de **entrada** ao longo do tempo)
+
+- O prompt inclui uma **memória compacta** do chat (estado curto com fatos/decisões persistentes).
+- A **IA pode atualizar** essa memória quando identificar necessidade (p.ex., preferências do usuário, passos concluídos).
+- Com isso, **reduzimos repetição de contexto** em chamadas futuras: a IA já “lembra” do essencial sem re-enviar grandes blocos de histórico.
+
+## 3) Janela de contexto enxuta (apenas as **3 últimas mensagens**)
+
+- Para cada chamada, o prompt inclui **somente as 3 mensagens mais recentes** do chat (além da memória e das instruções).
+- Essa janela curta é suficiente para continuidade local da conversa e **evita inflar tokens de entrada** com histórico irrelevante.
+
+## Fluxo resumido
+
+1. Usuário envia mensagem →  
+2. IA recebe: **instruções**, **memória** e **últimas 3 mensagens** →  
+3. IA **tenta detectar BotIntent**:  
+   - Se **detecta** → **retorna só a `tag_snake_case`** → sistema **carrega a resposta local** e envia;  
+   - Se **não detecta** → IA **gera resposta completa**;  
+4. Se fizer sentido, IA **propõe atualização da memória** (o sistema persiste).
+
+## Benefícios
+
+- **Redução direta de custo**: respostas rotineiras **não** consomem tokens de saída do modelo.  
+- **Velocidade e consistência**: mensagens padronizadas saem **imediatamente** e com **tom controlado**.  
+- **IA focada no que importa**: gasta tokens apenas em casos realmente **novos/complexos**.  
+- **Contexto sob medida**: memória + últimas 3 mensagens equilibram **coerência** e **baixo custo**.
+
+## Próximos passos (hardening e anti-abuso)
+
+- **Rate limiting por usuário/número**: limitar mensagens por período (p.ex., X/minuto e Y/dia) para conter abuso e custos.  
+- **“Validação de humano”**: desafios simples (captcha/verificação) quando detectar **padrões de bot** ou **picos anormais** de mensagens.
+
+> Observação: Essas medidas podem ser aplicadas tanto na borda (gateway) quanto no backend, e registradas no banco (com contadores e janelas deslizantes), garantindo **previsibilidade de custo** e **resiliência**.
+
+
 ## 📋 Comandos Úteis
 
 ### Backend

@@ -73,7 +73,12 @@ backend/src/
 Após a execução completa:
 
 - **Interface Web**: http://localhost:3000
+    - user: admin
+    - password: admin
 - **Documentação da API (Swagger)**: http://localhost:3001
+- **Monitoramento RabbitMQ**: http://localhost:15672/#/exchanges/%2F/amq.topic
+    - user: guest
+    - password: guest
 
 ## 📚 Estrutura dos Módulos
 

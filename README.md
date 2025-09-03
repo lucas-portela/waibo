@@ -273,6 +273,21 @@ O seed inicial cria uma conta de administrador para primeiros acessos.
 4. **Flexibilidade**: Troca de implementações sem afetar outras camadas
 5. **Escalabilidade**: Arquitetura preparada para crescimento
 
+## 🚀 Melhorias Possíveis
+
+- ✨ Adicionar testes automatizados (unitários e integração)
+- 📈 Implementar monitoramento e métricas detalhadas
+- 🔒 Melhorar autenticação com 2FA e OAuth
+- 🌐 Internacionalização (i18n) da interface
+- 📱 Criar aplicativo mobile (React Native/Flutter)
+- 🧩 Suporte a múltiplos provedores de IA
+- 🛡️ Hardening de segurança (rate limiting, brute force, etc)
+- 🏷️ Sistema de tags e filtros para conversas
+- 🗃️ Exportação/importação de conversas
+- 🧠 Aprimorar memória contextual do bot
+- 🤝 Integração com outros canais (Telegram, Messenger)
+- 📝 Documentação técnica mais detalhada
+
 ## 📝 Contribuição
 
 Para contribuir com o projeto:
